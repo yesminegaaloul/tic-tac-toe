@@ -1,0 +1,179 @@
+<link type="text/css" rel="stylesheet" href="/stylesheets/style.css" />
+<link href='http://fonts.googleapis.com/css?family=Geo' rel='stylesheet' type='text/css' />
+<script type="text/javascript" src="http://code.jquery.com/jquery-1.6.1.min.js"></script>
+<script type="text/javascript" src="/javascripts/game.js"></script>
+<script src="https://cdn.socket.io/socket.io-1.4.5.js"></script>
+
+<script type="text/javascript">
+    var player = {
+        name: null,
+        type: null,
+        action: null,
+        enemy: null,
+        layerX: null,
+        layerY: null,
+        sessionId: null,
+        turn: false
+    };
+    var plays = 0;
+    var socket = io.connect("http://127.0.0.1:8080");
+    socket.on("message", function (data) {
+
+        //First client connecting
+        if (data.action == "enter") {
+
+            player.sessionId = data.sessionId;
+
+        }
+        // waiting for another client to connect
+        else if (data.action == "wait") {
+
+            player = data;
+            player.turn = true;
+            $("#player_waiting").show();
+        }
+        // Game started
+        else if (data.action == "play") {
+
+            $("#player_waiting").hide();
+            $("#box").hide();
+            if (player.sessionId != data.sessionId) {
+                player.turn = true;
+                player.enemy = {
+                    sessionId: data.sessionId,
+                    name: data.name
+                }
+            } else {
+                player = data;
+            }
+
+            $(".p1 .name").text(player.name);
+            $(".p2 .name").text(player.enemy.name);
+        }
+        // users playing
+        else if (data.action == "draw") {
+
+            var coord = {
+                type: data.type,
+                layerX: data.x,
+                layerY: data.y
+            }
+            plays++;
+            if (player.type != data.type) {
+                player.turn = true;
+            }
+            game.drawFromOtherPlayer(coord);
+            // all cells are filled
+            if (plays == 9) {
+                game.canvas.width = game.canvas.width;
+                alert("NO ONE WON,Let's try again");
+                game.drawTable();
+                game.startBoxes();
+            }
+
+        }
+        //result for the winner
+        else if (data.action == "WIN") {
+
+            alert("Congratulation " + data.name + " win the game");
+            plays = 0;
+            game.canvas.width = game.canvas.width;
+            game.drawTable();
+            game.startBoxes();
+
+        }
+    });
+    window.onload = function () {
+
+        game = new boardGame();
+        game.drawTable();
+        game.startBoxes();
+
+        // Buttons
+        $("#play").click(function () {
+            if ($("#name").val() != null && $("#name").val() != "") {
+
+                // Update player data
+                // Send data to the server
+                player.name = $("#name").val();
+                player.action = "enter";
+
+                // Set name in game
+                game.setName(player.name);
+                socket.json.send(player);
+                $("#play").hide();
+                $("#name").hide();
+                $("#player_info").show();
+                $("#player_info").text("Hello " + player.name + " !");
+
+            } else {
+                alert("Tell us your name");
+            }
+
+        });
+
+        //user playing
+        document.getElementById("canvas").onclick = function (e) {
+            if (player.turn == true) {
+                player.action = "draw";
+                player.x = e.layerX;
+                player.y = e.layerY;
+                game.onclick(player);
+                player.turn = false;
+            }
+        }
+    }
+</script>
+
+<body>
+
+    <div id="box">
+        <br />
+        <h3>Tic Tac Toe</h3>
+        <br />
+
+        <div id="start">
+
+            <input id="name" type="text" placeholder="Enter your name" />
+            <button id="play">Submit</button>
+
+
+            <div id="player_info">
+            </div>
+
+            <div id="player_waiting">
+                Waiting for another player to connect
+            </div>
+
+
+        </div>
+
+
+    </div>
+
+    <div id="game">
+
+        <h2>Tic Tac Toe</h2>
+
+        <canvas id="canvas" width="300" height="300">
+        </canvas>
+
+        <div id="players">
+            <div class="player p1">
+                <div class="picture"></div>
+                <div class="name"></div>
+            </div>
+            <div id="vs">
+                VS
+            </div>
+            <div class="player p2">
+                <div class="picture"></div>
+                <div class="name"></div>
+            </div>
+        </div>
+
+    </div>
+
+</body>
+
+</html>
