@@ -34,6 +34,10 @@ local IPaddress(var socket = io.connect("http://127.0.0.1:8080")), in the Socket
    - 2-User playing 
    - 3-User won
    <br>
+   7) To check the database entries you have to :
+   - 1- open mongodb 
+   - 2- run the command : use TicTacToeGame
+   - 3- run the command : db.game.find()
 Here is an exemple of one game played(if these two users played more games they will be saved all together):
 <br>
 { "_id" : ObjectId("5bde0075e8f8523358e992fb"), "game_process" :  
