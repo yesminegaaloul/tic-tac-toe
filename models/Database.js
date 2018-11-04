@@ -4,4 +4,4 @@
 var mongoose = require('mongoose');
 
 
-mongoose.connect('mongodb://localhost/TicTac');
+mongoose.connect('mongodb://localhost/TicTacToeGame');
